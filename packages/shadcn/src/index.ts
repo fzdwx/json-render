@@ -7,3 +7,5 @@ export {
   type ComponentDefinition,
   type ShadcnProps,
 } from "./catalog";
+
+export { PortalContainerProvider } from "./portal-container";

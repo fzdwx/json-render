@@ -157,3 +157,7 @@ All form components support `validateOn` to control when validation runs:
 - Component implementations use bundled shadcn/ui primitives (not your app's `components/ui/`)
 - All form inputs support `checks` for validation (type + message pairs) and `validateOn` for timing
 - Events: inputs emit `change`/`submit`/`focus`/`blur`; buttons emit `press`; selects emit `change`/`select`
+
+## Scoped portal containers
+
+When a renderer uses a local theme, wrap it in `PortalContainerProvider` from `@json-render/shadcn` and pass a stable themed host element through `container`. Dialog, DropdownMenu, Popover, Select and Tooltip use the nearest provider. The host owns placement and cleanup; without a provider, portals continue to use `document.body`. This is host integration, not a model-facing prop.

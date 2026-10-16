@@ -63,6 +63,21 @@ function App({ spec }) {
 }
 ```
 
+## Portal containers and scoped themes
+
+Dialog, DropdownMenu, Popover, Select and Tooltip normally portal to `document.body`. When the renderer lives inside a scoped theme, supply a stable host element with that theme through `PortalContainerProvider`:
+
+```tsx
+import { PortalContainerProvider } from "@json-render/shadcn";
+import { Renderer } from "@json-render/react";
+
+<PortalContainerProvider container={themedPortalElement}>
+  <Renderer spec={spec} registry={registry} />
+</PortalContainerProvider>
+```
+
+The host owns the element and its lifetime. Place it outside clipped or transformed ancestors when overlays must cover the viewport. Nested providers select their nearest container. Without a provider, or with `container={undefined}`, the standard Radix body portal remains unchanged. The provider does not change component schemas, state, actions or overlay interactions.
+
 ## Extending with Custom Components
 
 Pick standard components as a base and add your own alongside them:
@@ -203,7 +218,7 @@ All form components support the `validateOn` prop to control when validation run
 
 | Entry Point | Exports |
 |-------------|---------|
-| `@json-render/shadcn` | `shadcnComponents` |
+| `@json-render/shadcn` | `shadcnComponents`, `PortalContainerProvider` |
 | `@json-render/shadcn/catalog` | `shadcnComponentDefinitions` |
 
 The `/catalog` entry point contains only Zod schemas (no React dependency), so it can be used in server-side code for prompt generation.

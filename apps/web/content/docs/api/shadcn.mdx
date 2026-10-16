@@ -25,7 +25,7 @@ Your app must have Tailwind CSS configured.
 <tbody>
 <tr>
 <td><code>@json-render/shadcn</code></td>
-<td><code>shadcnComponents</code></td>
+<td><code>shadcnComponents</code>, <code>PortalContainerProvider</code></td>
 <td>React implementations</td>
 </tr>
 <tr>
@@ -72,6 +72,21 @@ const { registry } = defineRegistry(catalog, {
 ```
 
 State actions (`setState`, `pushState`, `removeState`) are built into the React schema and handled by `ActionProvider` automatically. You don't need to declare them in your catalog.
+
+## Portal containers and scoped themes
+
+Dialog, DropdownMenu, Popover, Select and Tooltip normally portal to `document.body`. When the renderer lives inside a scoped theme, supply a stable host element with that theme through `PortalContainerProvider`:
+
+```tsx
+import { PortalContainerProvider } from "@json-render/shadcn";
+import { Renderer } from "@json-render/react";
+
+<PortalContainerProvider container={themedPortalElement}>
+  <Renderer spec={spec} registry={registry} />
+</PortalContainerProvider>
+```
+
+The host owns the element and its lifetime. Place it outside clipped or transformed ancestors when overlays must cover the viewport. Nested providers select their nearest container. Without a provider, or with `container={undefined}`, the standard Radix body portal remains unchanged. The provider does not change component schemas, state, actions or overlay interactions.
 
 ## Extending with Custom Components
 

@@ -25,12 +25,15 @@ export interface SpecIssue {
   message: string;
   /** The element key where the issue was found (if applicable) */
   elementKey?: string;
+  /** JSON Pointer to the offending expression. */
+  path?: string;
   /** Machine-readable issue code for programmatic handling */
   code:
     | "missing_root"
     | "root_not_found"
     | "missing_child"
     | "invalid_visible"
+    | "invalid_conditional_branches"
     | "repeat_without_children"
     | "repeat_item_outside_scope"
     | "repeat_state_mismatch"
@@ -61,6 +64,11 @@ export interface ValidateSpecOptions {
    * Defaults to false since orphans are harmless (just unused).
    */
   checkOrphans?: boolean;
+  /**
+   * Require $then/$else alongside $cond in dynamic expression positions.
+   * Defaults to false; never inspects literal initial state or rewrites values.
+   */
+  checkConditionalBranches?: boolean;
 }
 
 /**
@@ -85,7 +93,7 @@ export function validateSpec(
   spec: Spec,
   options: ValidateSpecOptions = {},
 ): SpecValidationIssues {
-  const { checkOrphans = false } = options;
+  const { checkOrphans = false, checkConditionalBranches = false } = options;
   const issues: SpecIssue[] = [];
 
   // 1. Check root
@@ -344,6 +352,36 @@ export function validateSpec(
           code: "orphaned_element",
         });
       }
+    }
+  }
+
+  if (checkConditionalBranches) {
+    const pointerKey = (key: string) =>
+      key.replaceAll("~", "~0").replaceAll("/", "~1");
+    const visit = (value: unknown, path: string, elementKey: string): void => {
+      if (!value || typeof value !== "object") return;
+      const record = value as Record<string, unknown>;
+      if (
+        Object.hasOwn(record, "$cond") &&
+        (!Object.hasOwn(record, "$then") || !Object.hasOwn(record, "$else"))
+      ) {
+        issues.push({
+          severity: "error",
+          code: "invalid_conditional_branches",
+          path,
+          elementKey,
+          message: `Conditional expression at ${path} requires $then and $else alongside $cond, not inside it.`,
+        });
+      }
+      for (const [key, child] of Object.entries(record)) {
+        visit(child, `${path}/${pointerKey(key)}`, elementKey);
+      }
+    };
+    for (const [key, element] of Object.entries(spec.elements)) {
+      const path = `/elements/${pointerKey(key)}`;
+      visit(element.props, `${path}/props`, key);
+      visit(element.on, `${path}/on`, key);
+      visit(element.watch, `${path}/watch`, key);
     }
   }
 

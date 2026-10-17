@@ -209,6 +209,16 @@ const { spec: fixed, fixDetails } = autoFixSpec(spec);
 const attempt = autoFixSpec(spec, { lossy: retriesExhausted });
 ```
 
+Hosts can opt in to `validateSpec(spec, { checkConditionalBranches: true })`
+to require `$then` and `$else` beside `$cond` in props and action parameters
+(including nested branches and watch actions). For example,
+`{ "$cond": { "$state": "/saved", "$then": "Saved", "$else": "Save" } }`
+returns `invalid_conditional_branches` with the expression's JSON Pointer in
+`issue.path` and the formatted error message. The valid form is
+`{ "$cond": { "$state": "/saved" }, "$then": "Saved", "$else": "Save" }`.
+The option defaults to false. It does not inspect literal initial state,
+evaluate conditions, rewrite expressions, or change rendering behavior.
+
 ## Visibility Conditions
 
 Control element visibility with state-based conditions. `VisibilityContext` is `{ stateModel: StateModel }`.

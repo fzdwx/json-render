@@ -766,3 +766,71 @@ describe("autoFixSpec", () => {
     expect(fixes).toHaveLength(0);
   });
 });
+
+describe("optional conditional branch validation", () => {
+  it("reports misplaced branches in resolved props and action parameters", () => {
+    const misplaced = {
+      $cond: { $state: "/favorite", $then: "Saved", $else: "Save" },
+    };
+    const spec: Spec = {
+      root: "star",
+      state: { favorite: false },
+      elements: {
+        star: {
+          type: "IconButton",
+          props: { icon: "star", label: misplaced },
+          on: {
+            press: {
+              action: "setState",
+              params: { statePath: "/favorite", value: misplaced },
+            },
+          },
+        },
+      },
+    };
+    expect(validateSpec(spec).valid).toBe(true);
+    expect(validateSpec(spec, { checkConditionalBranches: true })).toMatchObject({
+      valid: false,
+      issues: [
+        {
+          code: "invalid_conditional_branches",
+          path: "/elements/star/props/label",
+        },
+        {
+          code: "invalid_conditional_branches",
+          path: "/elements/star/on/press/params/value",
+        },
+      ],
+    });
+  });
+
+  it("accepts sibling branches including null and ignores literal initial state", () => {
+    const spec: Spec = {
+      root: "star",
+      state: { favorite: false, literal: { $cond: { example: true } } },
+      elements: {
+        star: {
+          type: "IconButton",
+          props: {
+            icon: "star",
+            label: {
+              $cond: { $state: "/favorite" },
+              $then: "Saved",
+              $else: "Save",
+            },
+          },
+          on: {
+            press: {
+              action: "setState",
+              params: {
+                statePath: "/favorite",
+                value: { $cond: { $state: "/favorite" }, $then: false, $else: null },
+              },
+            },
+          },
+        },
+      },
+    };
+    expect(validateSpec(spec, { checkConditionalBranches: true }).valid).toBe(true);
+  });
+});
